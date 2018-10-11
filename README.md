@@ -1,7 +1,7 @@
 # ontology-shadowchain-java
 
 - [1. Overview](#1-Overview)
-- [2. Setting up the development environment](#2-Setting up the development environment)
+- [2. Setting up the development environment](#2-setting-up-the-development-environment)
 - [3. Usage](#3-Usage)
 
 ## 1. verview
