@@ -1,0 +1,45 @@
+{
+  "mainChainUrl":[
+    "http://127.0.0.1:20336"
+  ],
+  "shadowChainUrl":[
+    "http://127.0.0.1:20336"
+  ],
+  "wallet":"wallet.dat",
+  "admin":[
+    {
+      "address": "",
+      "password": ""
+    }
+  ],
+  "superAdmin":[
+    {
+      "address": "",
+      "password": ""
+    },
+    {
+      "address": "",
+      "password": ""
+    },
+    {
+      "address": "",
+      "password": ""
+    },
+    {
+      "address": "",
+      "password": ""
+    },
+    {
+      "address": "",
+      "password": ""
+    },
+    {
+      "address": "",
+      "password": ""
+    },
+    {
+      "address": "",
+      "password": ""
+    }
+  ]
+}

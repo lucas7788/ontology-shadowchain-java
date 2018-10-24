@@ -15,6 +15,10 @@ public class ShadowChainServer {
     public OntSdk sdk;
     public static Object thelock;
 
+    public ShadowChainServer(OntSdk sdk){
+        this.sdk = sdk;
+    }
+
     public ShadowChainServer(OntSdk sdk, Object lock){
         this.sdk = sdk;
         thelock = lock;
