@@ -14,10 +14,13 @@ import java.util.Base64;
 public class OngXDemo {
 
     public static void main(String[] args) throws Exception {
+        String mainChainUrl = "http://139.219.128.220:20336";
+        String sideChainUrl = "http://139.219.128.220:30336";
         OntSdk sdk = OntSdk.getInstance();
         sdk.openWalletFile("wallet.dat");
 //        sdk.setRpc("http://139.219.128.220:20336");
         sdk.setRpc("http://127.0.0.1:20336");
+//        sdk.setRpc(sideChainUrl);
         OngX ongX = new OngX(sdk);
         String password = "111111";
         Account account = sdk.getWalletMgr().getAccount("AHX1wzvdw9Yipk7E9MuLY4GGX4Ym9tHeDe",password);
@@ -39,15 +42,17 @@ public class OngXDemo {
         Account account7 = getAccount("EyXxszzKh09jszQXMIFJTmbujnojOzYzPU4cC0wOpuegDgVcRFllATQ81zD0Rp8s","passwordtest","AK3YRcRvKrASQ6nTfW48Z4iMZ2sDTDRiMC","jbwUF7JxgsiJq5QAy5dfug==");
         Address multiAddress = Address.addressFromMultiPubKeys(5,account1.serializePublicKey(),account2.serializePublicKey(),account3.serializePublicKey(),account4.serializePublicKey(),account5.serializePublicKey(),account6.serializePublicKey(),account7.serializePublicKey());
         Account[] accounts = new Account[]{account1,account2,account3,account4,account5,account6,account7};
+        Account[] accounts1 = new Account[]{account1,account2,account3,account4,account5};
         byte[][] pks = new byte[accounts.length][];
         for(int i=0;i<pks.length;i++){
             pks[i] = accounts[i].serializePublicKey();
         }
 
-        if(false){
-//            String txhash = ongX.ongxSetSyncAddr(accounts,pks,5,account.getAddressU160().toBase58(),account,20000,0);
+        if(true){
+            ongX.setRpcUrl(sideChainUrl);
+            String txhash = ongX.ongxSetSyncAddr(accounts1,pks,5,account.getAddressU160().toBase58(),account,20000,0);
 
-            String txhash = ongX.ongxSetSyncAddr(account,account.getAddressU160().toBase58(),account,20000,0);
+//            String txhash = ongX.ongxSetSyncAddr(account,account.getAddressU160().toBase58(),account,20000,0);
             System.out.println("txhash: " + txhash);
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));

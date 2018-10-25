@@ -21,6 +21,10 @@ public class OngX {
         this.sdk = sdk;
     }
 
+    public void setRpcUrl(String rpcUrl){
+        sdk.setRpc(rpcUrl);
+    }
+
     public String getContractAddress() {
         return ongContract;
     }
@@ -93,19 +97,13 @@ public class OngX {
     public String ongxSetSyncAddr(Account[] accounts,byte[][] allPubkeys,int M,String address, Account payer, long gaslimit, long gasprice) throws Exception {
         List list = new ArrayList();
         Struct struct = new Struct();
-        struct.add(Address.decodeBase58(address).toArray());
+        struct.add(Address.decodeBase58(address));
         list.add(struct);
         byte[] args = NativeBuildParams.createCodeParamsScript(list);
         Transaction tx = sdk.vm().buildNativeParams(new Address(Helper.hexToBytes(ongContract)),"setSyncAddr",args,payer.getAddressU160().toBase58(),gaslimit, gasprice);
-        boolean hasPayer = false;
+        sdk.signTx(tx, new Account[][]{{payer}});
         for(Account account : accounts){
             sdk.addMultiSign(tx, M,allPubkeys, account);
-            if (account.equals(payer)){
-                hasPayer = true;
-            }
-        }
-        if(! hasPayer){
-            sdk.addSign(tx,payer);
         }
         boolean b = sdk.getConnect().sendRawTransaction(tx.toHexString());
         if (b) {

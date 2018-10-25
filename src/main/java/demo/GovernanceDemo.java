@@ -1,8 +1,10 @@
 package demo;
 
+import com.alibaba.fastjson.JSON;
 import com.github.ontio.OntSdk;
 import com.github.ontio.account.Account;
 import com.github.ontio.common.Address;
+import com.github.ontio.common.Config;
 import com.github.ontio.common.Helper;
 import com.github.ontio.core.governance.*;
 import com.github.ontio.crypto.SignatureScheme;
@@ -14,7 +16,7 @@ import java.util.Base64;
 public class GovernanceDemo {
     public static void main(String[] args) throws Exception {
         String mainChainUrl = "http://139.219.128.220:20336";
-        String sideChainUrl = "http://127.0.0.1:20336";
+        String sideChainUrl = "http://139.219.128.220:30336";
         OntSdk sdk = OntSdk.getInstance();
         sdk.openWalletFile("wallet.dat");
         sdk.setRpc(mainChainUrl);
@@ -46,62 +48,79 @@ public class GovernanceDemo {
             pks[i] = accounts[i].serializePublicKey();
         }
         if(false){
-            GovernanceView view = sdk.nativevm().governance().getGovernanceView();
-            String txhash = governance.inputGovernanceView(account,view,account,20000,0);
+            sdk.setRpc(sideChainUrl);
+            String txhash = sdk.nativevm().governance().commitDpos(multiAddress,5,new Account[]{account1,account2,account3,account4,account5},new byte[][]{account6.serializePublicKey(),account7.serializePublicKey()},
+                    account1,sdk.DEFAULT_GAS_LIMIT,0);
+
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
             return;
         }
-        if(false){
-            governance.setNodeUrl(sideChainUrl);
-            Configuration c = governance.getConfiguration();
-            System.out.println(c);
+        if(true){
+//            failed, address serialize error
+            sdk.setRpc(mainChainUrl);
+            GovernanceView view = sdk.nativevm().governance().getGovernanceView();
+            System.out.println(JSON.toJSONString(view));
+            governance.setRpcUrl(sideChainUrl);
+//            GovernanceView view1 = governance.getGovernanceView();
+//            System.out.println(JSON.toJSONString(view1));
+//
+            String txhash = governance.inputGovernanceView(account,view,account,20000,0);
+            System.out.println(txhash);
+            Thread.sleep(6000);
+            System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
             return;
         }
+
         if(false){
+//            success
             sdk.setRpc(mainChainUrl);
             Configuration configuration = sdk.nativevm().governance().getConfiguration();
-            governance.setNodeUrl(sideChainUrl);
+            System.out.println(JSON.toJSONString(configuration));
+            configuration.MaxBlockChangeView = 20000;
+            governance.setRpcUrl(sideChainUrl);
+            Configuration configuration1 = governance.getConfiguration();
+            System.out.println(JSON.toJSONString(configuration1));
             String txhash = governance.inputConfig(account,configuration,account,20000,0);
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
             return;
         }
+
         if(false){
-            governance.setNodeUrl(sideChainUrl);
-            GlobalParam g = governance.getGlobalParam();
-            System.out.println(g);
-            return;
-        }
-        if(false){
+//            success
             sdk.setRpc(mainChainUrl);
             GlobalParam param = sdk.nativevm().governance().getGlobalParam();
-            governance.setNodeUrl(sideChainUrl);
-            String txhash = governance.inputGlobalParam(account,param,account,20000,0);
-            Thread.sleep(6000);
-            System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
-            governance.setNodeUrl(sideChainUrl);
-            GlobalParam g = governance.getGlobalParam();
-            System.out.println(g);
+            System.out.println(JSON.toJSONString(param));
+
+            governance.setRpcUrl(sideChainUrl);
+            GlobalParam param1 = governance.getGlobalParam();
+            System.out.println(JSON.toJSONString(param1));
+//
+//            String txhash = governance.inputGlobalParam(account,param,account,20000,0);
+//            Thread.sleep(6000);
+//            System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
+
             return;
         }
 
         if(false){
-            InputPeerPoolMapParam peerPoolMap = sdk.nativevm().governance().getInputPeerPoolMapParam("123456");
+            sdk.setRpc(mainChainUrl);
+            InputPeerPoolMapParam peerPoolMap = sdk.nativevm().sideChainGovernance().getInputPeerPoolMapParam("123456");
+            System.out.println(JSON.toJSONString(peerPoolMap.peerPoolMap));
+
+            governance.setRpcUrl(sideChainUrl);
+//            governance.getInputPeerPoolMapParam();
             String txhash = governance.inputPeerPoolMap(account,peerPoolMap,account,20000,0);
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
             return;
         }
-        if(true){
-            governance.setNodeUrl(sideChainUrl);
-            SplitCurve curve = governance.getSplitCurve();
-            System.out.println(curve);
-            return;
-        }
-        if(true){
+
+        if(false){
+            sdk.setRpc(mainChainUrl);
             SplitCurve curve = sdk.nativevm().governance().getSplitCurve();
-            governance.setNodeUrl(sideChainUrl);
+            governance.setRpcUrl(sideChainUrl);
             String txhash = governance.inputSplitCurve(account,curve,account,20000,0);
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));

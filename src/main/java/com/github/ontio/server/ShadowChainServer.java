@@ -1,33 +1,54 @@
 package com.github.ontio.server;
 
+import com.alibaba.fastjson.JSON;
 import com.github.ontio.OntSdk;
-import com.github.ontio.common.ErrorCode;
+import com.github.ontio.common.Config;
+import com.github.ontio.common.ShadowErrorCode;
+import com.github.ontio.common.ShadowException;
 import com.github.ontio.network.exception.ConnectorException;
-import com.github.ontio.sdk.exception.SDKException;
-
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ShadowChainServer {
     private OntSdk sdk;
-    private String url;
+    private Config config;
+    private String nodeUrl;
 
-    public static String NodeUrl1 = "http://127.0.0.1:20336";
-    public static String NodeUrl2 = "http://polaris1.ont.io:20336";
-    public static String[] NodeUrls = new String[]{NodeUrl1, NodeUrl2};
-    public static Map<String, Integer> NodeUrlIndex = new HashMap(){};
-
-    static {
-        NodeUrlIndex.put(NodeUrl1,0);
-    }
-
-    public ShadowChainServer(String url) {
-        this.url = url;
+    public ShadowChainServer() {
         this.sdk = OntSdk.getInstance();
-        this.sdk.setRpc(url);
     }
-    public void startServer(int height) {
+    public void readConfig(String path) throws ShadowException {
+        File file = new File(path);
+        if(!file.exists()){
+            throw new ShadowException(ShadowErrorCode.OtherError("the path of config.json is wrong:" + path));
+        }
+        InputStream inputStream = null;
+        try {
+            inputStream = new FileInputStream(path);
+            byte[] bytes = new byte[inputStream.available()];
+            inputStream.read(bytes);
+            String text = new String(bytes);
+            config = JSON.parseObject(text, Config.class);
+        } catch (FileNotFoundException e) {
+            System.out.println("there is no the file");
+            throw new ShadowException(ShadowErrorCode.OtherError("the path of config.json is wrong:" + path));
+        }catch (IOException e){
+            System.out.println(e.getMessage());
+            throw new ShadowException(ShadowErrorCode.OtherError("read file error:" + path));
+        }
+
+    }
+    public void initServer() throws ShadowException {
+        if(config == null){
+            throw new ShadowException(ShadowErrorCode.OtherError("please first read config"));
+        }
+        if(config.mainChainUrl.size() == 0){
+            throw new ShadowException(ShadowErrorCode.OtherError("there is not the main chain url config"));
+        }
+        nodeUrl = config.mainChainUrl.get(0);
+        sdk.setRpc(nodeUrl);
+
+    }
+    public void startServer(int height) throws ShadowException {
 
         while (true) {
             try {
@@ -51,6 +72,7 @@ public class ShadowChainServer {
             }
         }
     }
+
     public void saveData(int height) {
         File file = new File("result.txt");
         if(!file.exists()){
@@ -82,14 +104,17 @@ public class ShadowChainServer {
         System.out.println("please wait...");
         Thread.sleep(6000);
     }
-    public void changeUrl(){
-        int index = NodeUrlIndex.get(this.url);
-        int i = (index+1) % NodeUrls.length;
-        sdk.setRpc(NodeUrls[i]);
-        this.url = NodeUrls[i];
+    public void changeUrl() throws ShadowException {
+        if(!config.mainChainUrl.contains(nodeUrl)){
+            throw new ShadowException(ShadowErrorCode.OtherError("the node url is wrong" + nodeUrl));
+        }
+        int i = config.mainChainUrl.indexOf(nodeUrl);
+        int nextI = i+1%config.mainChainUrl.size();
+        nodeUrl = config.mainChainUrl.get(nextI);
+        sdk.setRpc(nodeUrl);
     }
 
-    public boolean verifyHeight(int height) throws IOException, InterruptedException {
+    public boolean verifyHeight(int height) throws IOException, InterruptedException, ShadowException {
         try{
             int currentHeight = sdk.getConnect().getBlockHeight();
             if (currentHeight < height){

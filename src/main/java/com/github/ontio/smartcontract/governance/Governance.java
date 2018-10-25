@@ -13,7 +13,6 @@ import com.github.ontio.smartcontract.nativevm.abi.NativeBuildParams;
 import com.github.ontio.smartcontract.nativevm.abi.Struct;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +28,12 @@ public class Governance {
     public Governance(OntSdk sdk){
         this.sdk = sdk;
     }
-    public void setNodeUrl(String nodeUrl){
-        this.sdk.setRpc(nodeUrl);
+    public void setRpcUrl(String rpcUrl){
+        this.sdk.setRpc(rpcUrl);
+    }
+
+    public GovernanceView getGovernanceView() throws SDKException, ConnectorException, IOException {
+        return sdk.nativevm().governance().getGovernanceView();
     }
 
     public InputPeerPoolMapParam getInputPeerPoolMapParam(String sideChainId) throws ConnectorException, IOException, SDKException {
@@ -48,7 +51,7 @@ public class Governance {
         return null;
     }
     public SplitCurve getSplitCurve() throws ConnectorException, IOException, ShadowException {
-        String res = sdk.getConnect().getStorage(contractAddress, Helper.toHexString(SPLIT_CURVE.getBytes()));
+        String res = sdk.getConnect().getStorage(Helper.reverse(contractAddress), Helper.toHexString(SPLIT_CURVE.getBytes()));
         if(res==null || res.equals("")){
             throw new ShadowException(ShadowErrorCode.OtherError("splitCurve is null"));
         }
@@ -57,6 +60,19 @@ public class Governance {
         BinaryReader reader = new BinaryReader(in);
         curve.deserialize(reader);
         return curve;
+    }
+
+    public Configuration getConfiguration() throws SDKException, ConnectorException, IOException {
+        return sdk.nativevm().governance().getConfiguration();
+    }
+
+    public GlobalParam getGlobalParam() throws ConnectorException, IOException {
+        String res = sdk.getConnect().getStorage(Helper.reverse(contractAddress), Helper.toHexString(GLOBAL_PARAM.getBytes()));
+        ByteArrayInputStream in = new ByteArrayInputStream(Helper.hexToBytes(res));
+        BinaryReader reader = new BinaryReader(in);
+        GlobalParam param = new GlobalParam();
+        param.deserialize(reader);
+        return param;
     }
 
     /**
@@ -93,9 +109,7 @@ public class Governance {
         return null;
     }
 
-    public Configuration getConfiguration() throws SDKException, ConnectorException, IOException {
-        return sdk.nativevm().governance().getConfiguration();
-    }
+
 
     public String inputConfig(Account account, Configuration configuration, Account payer, long gaslimit, long gasprice) throws Exception {
         if(account == null || configuration == null || payer == null || gaslimit < 0|| gasprice < 0){
@@ -117,14 +131,7 @@ public class Governance {
         }
         return null;
     }
-    public GlobalParam getGlobalParam() throws SDKException, ConnectorException, IOException {
-        String res = sdk.getConnect().getStorage(Helper.reverse(contractAddress), Helper.toHexString(GLOBAL_PARAM.getBytes()));
-        ByteArrayInputStream in = new ByteArrayInputStream(Helper.hexToBytes(res));
-        BinaryReader reader = new BinaryReader(in);
-        GlobalParam param = new GlobalParam();
-        param.deserialize(reader);
-        return param;
-    }
+
     public String inputGlobalParam(Account account, GlobalParam param, Account payer, long gaslimit, long gasprice) throws Exception {
         if(account == null || param == null || payer == null || gaslimit < 0|| gasprice < 0){
             throw new SDKException(ErrorCode.OtherError("parameter is wrong"));
