@@ -51,7 +51,6 @@ public class OngXDemo {
         if(true){
             ongX.setRpcUrl(sideChainUrl);
             String txhash = ongX.ongxSetSyncAddr(accounts1,pks,5,account.getAddressU160().toBase58(),account,20000,0);
-
 //            String txhash = ongX.ongxSetSyncAddr(account,account.getAddressU160().toBase58(),account,20000,0);
             System.out.println("txhash: " + txhash);
             Thread.sleep(6000);

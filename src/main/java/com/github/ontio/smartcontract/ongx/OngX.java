@@ -102,8 +102,8 @@ public class OngX {
         byte[] args = NativeBuildParams.createCodeParamsScript(list);
         Transaction tx = sdk.vm().buildNativeParams(new Address(Helper.hexToBytes(ongContract)),"setSyncAddr",args,payer.getAddressU160().toBase58(),gaslimit, gasprice);
         sdk.signTx(tx, new Account[][]{{payer}});
-        for(Account account : accounts){
-            sdk.addMultiSign(tx, M,allPubkeys, account);
+        for(int i=0;i<accounts.length;i++){
+            sdk.addMultiSign(tx, M,allPubkeys, accounts[i]);
         }
         boolean b = sdk.getConnect().sendRawTransaction(tx.toHexString());
         if (b) {

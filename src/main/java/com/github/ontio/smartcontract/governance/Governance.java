@@ -7,6 +7,7 @@ import com.github.ontio.common.*;
 import com.github.ontio.core.governance.*;
 import com.github.ontio.core.transaction.Transaction;
 import com.github.ontio.io.BinaryReader;
+import com.github.ontio.io.utils;
 import com.github.ontio.network.exception.ConnectorException;
 import com.github.ontio.sdk.exception.SDKException;
 import com.github.ontio.smartcontract.nativevm.abi.NativeBuildParams;
@@ -15,6 +16,7 @@ import com.github.ontio.smartcontract.nativevm.abi.Struct;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,33 +35,40 @@ public class Governance {
     }
 
     public GovernanceView getGovernanceView() throws SDKException, ConnectorException, IOException {
-        return sdk.nativevm().governance().getGovernanceView();
+        String view = sdk.getConnect().getStorage(Helper.reverse(contractAddress),Helper.toHexString("governanceView".getBytes()));
+        if(view == null || view.equals("")){
+            throw new SDKException(ErrorCode.OtherError("view is null"));
+        }
+        GovernanceView governanceView = new GovernanceView();
+        ByteArrayInputStream bais = new ByteArrayInputStream(Helper.hexToBytes(view));
+        BinaryReader reader = new BinaryReader(bais);
+        governanceView.view = (int)utils.readVarInt(reader);
+        governanceView.height = (int)utils.readVarInt(reader);
+        governanceView.txhash = new UInt256(reader.readVarBytes());
+        return governanceView;
     }
 
-    public InputPeerPoolMapParam getInputPeerPoolMapParam(String sideChainId) throws ConnectorException, IOException, SDKException {
-        Map peerPoolMap = sdk.nativevm().governance().getPeerPoolMap();
-        byte[] sideChainIdBytes = sideChainId.getBytes();
-        byte[] sideChainNodeInfoBytes = SIDE_CHAIN_NODE_INFO.getBytes();
-        byte[] key = new byte[sideChainIdBytes.length + sideChainNodeInfoBytes.length];
-        System.arraycopy(sideChainNodeInfoBytes,0, key,0,sideChainNodeInfoBytes.length);
-        System.arraycopy(sideChainIdBytes,0, key,sideChainNodeInfoBytes.length,sideChainIdBytes.length);
-        String resNode = sdk.getConnect().getStorage(contractAddress, Helper.toHexString(key));
-        NodeToSideChainParams params = new NodeToSideChainParams();
-        ByteArrayInputStream in = new ByteArrayInputStream(Helper.hexToBytes(resNode));
-        BinaryReader reader = new BinaryReader(in);
-        params.deserialize(reader);
-        return null;
-    }
-    public SplitCurve getSplitCurve() throws ConnectorException, IOException, ShadowException {
-        String res = sdk.getConnect().getStorage(Helper.reverse(contractAddress), Helper.toHexString(SPLIT_CURVE.getBytes()));
-        if(res==null || res.equals("")){
-            throw new ShadowException(ShadowErrorCode.OtherError("splitCurve is null"));
+    public Map getPeerPoolMap() throws ConnectorException, IOException, SDKException {
+        byte[] peerPoolBytes = "peerPool".getBytes();
+        String value = this.sdk.getConnect().getStorage(Helper.reverse(contractAddress), Helper.toHexString(peerPoolBytes));
+        ByteArrayInputStream bais2 = new ByteArrayInputStream(Helper.hexToBytes(value));
+        BinaryReader reader = new BinaryReader(bais2);
+        int length = (int)utils.readVarInt(reader);
+        Map<String, PeerPoolItem> peerPoolMap2 = new HashMap();
+        for(int i = 0; i < length; ++i) {
+            PeerPoolItem item = new PeerPoolItem();
+            item.index = (int)utils.readVarInt(reader);
+            item.peerPubkey = reader.readVarString();
+            item.address = utils.readAddress(reader);
+            item.status = (int)utils.readVarInt(reader);
+            item.initPos = utils.readVarInt(reader);
+            item.totalPos = utils.readVarInt(reader);
+            peerPoolMap2.put(item.peerPubkey, item);
         }
-        SplitCurve curve = new SplitCurve();
-        ByteArrayInputStream in = new ByteArrayInputStream(Helper.hexToBytes(res));
-        BinaryReader reader = new BinaryReader(in);
-        curve.deserialize(reader);
-        return curve;
+        return peerPoolMap2;
+    }
+    public SplitCurve getSplitCurve() throws ConnectorException, IOException, ShadowException, SDKException {
+        return sdk.nativevm().governance().getSplitCurve();
     }
 
     public Configuration getConfiguration() throws SDKException, ConnectorException, IOException {
@@ -94,6 +103,10 @@ public class Governance {
         struct.add(peerPoolMap.peerPoolMap.size());
         for(PeerPoolItem item : peerPoolMap.peerPoolMap.values()){
             struct.add(item.index, item.peerPubkey, item.address, item.status, item.initPos, item.totalPos);
+        }
+        struct.add(peerPoolMap.nodeInfoMap.size());
+        for(NodeToSideChainParams params : peerPoolMap.nodeInfoMap.values()){
+            struct.add(params.peerPubkey,params.address,params.sideChainId);
         }
         list.add(struct);
         byte[] args = NativeBuildParams.createCodeParamsScript(list);

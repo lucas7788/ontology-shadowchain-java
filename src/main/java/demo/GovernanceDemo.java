@@ -12,6 +12,7 @@ import com.github.ontio.sdk.wallet.Identity;
 import com.github.ontio.smartcontract.governance.Governance;
 
 import java.util.Base64;
+import java.util.Map;
 
 public class GovernanceDemo {
     public static void main(String[] args) throws Exception {
@@ -56,19 +57,19 @@ public class GovernanceDemo {
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
             return;
         }
-        if(true){
-//            failed, address serialize error
+        if(false){
+//            success
             sdk.setRpc(mainChainUrl);
             GovernanceView view = sdk.nativevm().governance().getGovernanceView();
             System.out.println(JSON.toJSONString(view));
             governance.setRpcUrl(sideChainUrl);
-//            GovernanceView view1 = governance.getGovernanceView();
-//            System.out.println(JSON.toJSONString(view1));
-//
-            String txhash = governance.inputGovernanceView(account,view,account,20000,0);
-            System.out.println(txhash);
-            Thread.sleep(6000);
-            System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
+            GovernanceView view1 = governance.getGovernanceView();
+            System.out.println(JSON.toJSONString(view1));
+
+//            String txhash = governance.inputGovernanceView(account,view,account,20000,0);
+//            System.out.println(txhash);
+//            Thread.sleep(6000);
+//            System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
             return;
         }
 
@@ -104,26 +105,35 @@ public class GovernanceDemo {
             return;
         }
 
-        if(false){
+        if(true){
             sdk.setRpc(mainChainUrl);
-            InputPeerPoolMapParam peerPoolMap = sdk.nativevm().sideChainGovernance().getInputPeerPoolMapParam("123456");
+            InputPeerPoolMapParam peerPoolMap = sdk.nativevm().governance().getInputPeerPoolMapParam("123456");
             System.out.println(JSON.toJSONString(peerPoolMap.peerPoolMap));
-
+            PeerPoolItem item = new PeerPoolItem();
+            peerPoolMap.peerPoolMap.get("0281d198c0dd3737a9c39191bc2d1af7d65a44261a8a64d6ef74d63f27cfb5ed92").address = account.getAddressU160();
             governance.setRpcUrl(sideChainUrl);
-//            governance.getInputPeerPoolMapParam();
+
             String txhash = governance.inputPeerPoolMap(account,peerPoolMap,account,20000,0);
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
+            Map param = governance.getPeerPoolMap();
             return;
         }
 
         if(false){
+//            success
             sdk.setRpc(mainChainUrl);
             SplitCurve curve = sdk.nativevm().governance().getSplitCurve();
+            System.out.println(JSON.toJSONString(curve));
+
             governance.setRpcUrl(sideChainUrl);
+
+            curve.Yi[0] = 1;
             String txhash = governance.inputSplitCurve(account,curve,account,20000,0);
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
+            SplitCurve curve1 = governance.getSplitCurve();
+            System.out.println(JSON.toJSONString(curve1));
             return;
         }
 
