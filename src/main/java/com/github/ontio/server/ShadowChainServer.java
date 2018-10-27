@@ -1,21 +1,29 @@
 package com.github.ontio.server;
-
 import com.alibaba.fastjson.JSON;
 import com.github.ontio.OntSdk;
-import com.github.ontio.common.Config;
-import com.github.ontio.common.ShadowErrorCode;
-import com.github.ontio.common.ShadowException;
-import com.github.ontio.network.exception.ConnectorException;
+import com.github.ontio.account.Account;
+import com.github.ontio.server.base.ThreadHandle;
+import com.github.ontio.server.base.ThreadMainChain;
+import com.github.ontio.server.base.ThreadSideChain;
+import com.github.ontio.server.config.Config;
+import com.github.ontio.shadowchain.ShadowChain;
+import com.github.ontio.shadowexception.ShadowErrorCode;
+import com.github.ontio.shadowexception.ShadowException;
+
 import java.io.*;
 
 public class ShadowChainServer {
     private OntSdk sdk;
     private Config config;
-    private String nodeUrl;
+    private String mainChainUrl;
+    private Account admin;
+    private ShadowChain shadowChain;
 
     public ShadowChainServer() {
+
         this.sdk = OntSdk.getInstance();
     }
+
     public void readConfig(String path) throws ShadowException {
         File file = new File(path);
         if(!file.exists()){
@@ -28,102 +36,58 @@ public class ShadowChainServer {
             inputStream.read(bytes);
             String text = new String(bytes);
             config = JSON.parseObject(text, Config.class);
+            if(config.mainChainUrl.size() == 0 || config.shadowChainUrl.size() == 0){
+                throw new ShadowException(ShadowErrorCode.OtherError("there is no the main chain url or side chain url"));
+            }
+            mainChainUrl = config.mainChainUrl.get(0);
+            sdk.openWalletFile(config.wallet);
+            sdk.setRpc(mainChainUrl);
+            shadowChain = new ShadowChain(sdk, config.shadowChainUrl.get(0));
+            admin = sdk.getWalletMgr().getAccount(config.admin.get("address"),config.admin.get("password"));
+
         } catch (FileNotFoundException e) {
             System.out.println("there is no the file");
             throw new ShadowException(ShadowErrorCode.OtherError("the path of config.json is wrong:" + path));
         }catch (IOException e){
             System.out.println(e.getMessage());
             throw new ShadowException(ShadowErrorCode.OtherError("read file error:" + path));
-        }
-
-    }
-    public void initServer() throws ShadowException {
-        if(config == null){
-            throw new ShadowException(ShadowErrorCode.OtherError("please first read config"));
-        }
-        if(config.mainChainUrl.size() == 0){
-            throw new ShadowException(ShadowErrorCode.OtherError("there is not the main chain url config"));
-        }
-        nodeUrl = config.mainChainUrl.get(0);
-        sdk.setRpc(nodeUrl);
-
-    }
-    public void startServer(int height) throws ShadowException {
-
-        while (true) {
-            try {
-                boolean ok = verifyHeight(height);
-                if (!ok){
-                    continue;
-                }
-                Object obj = sdk.getConnect().getSmartCodeEvent(height);
-                if(obj != null){
-                    System.out.println("Notify:" + obj);
-                    Thread.sleep(3000);
-                }
-                height++;
-            } catch (ConnectorException e) {
-                System.out.println("Abnormal network connection");
-                changeUrl();
-            } catch (IOException|InterruptedException e) {
-                System.out.println(e.getMessage());
-                saveData(height);
-                break;
-            }
-        }
-    }
-
-    public void saveData(int height) {
-        File file = new File("result.txt");
-        if(!file.exists()){
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                System.out.println("height: " + height);
-                System.out.println(e.getMessage());
-                e.printStackTrace();
-            }
-        }
-        try{
-            FileWriter fw=new FileWriter(file);
-            BufferedWriter bw=new BufferedWriter(fw);
-            bw.write(height + "\n");
-            bw.close();
-            fw.close();
-        }catch (FileNotFoundException e){
-            saveData(height);
-        }catch (IOException e){
-            System.out.println("height: " + height);
-            System.out.println(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }
 
-    public void waiteMoment(int currentHeight) throws InterruptedException {
-        System.out.println("current block height is " + currentHeight);
-        System.out.println("please wait...");
-        Thread.sleep(6000);
-    }
-    public void changeUrl() throws ShadowException {
-        if(!config.mainChainUrl.contains(nodeUrl)){
-            throw new ShadowException(ShadowErrorCode.OtherError("the node url is wrong" + nodeUrl));
-        }
-        int i = config.mainChainUrl.indexOf(nodeUrl);
-        int nextI = i+1%config.mainChainUrl.size();
-        nodeUrl = config.mainChainUrl.get(nextI);
-        sdk.setRpc(nodeUrl);
+    public void startServer() {
+        Object lock = new Object();
+//        监听主链
+        ThreadMainChain mainChain = new ThreadMainChain(this, lock);
+        new Thread(mainChain).start();
+
+//        监听子链
+        ThreadSideChain sideChain = new ThreadSideChain(this,lock);
+        new Thread(sideChain).start();
+
+        ThreadHandle handle = new ThreadHandle(this,lock);
+        new Thread(handle).start();
     }
 
-    public boolean verifyHeight(int height) throws IOException, InterruptedException, ShadowException {
-        try{
-            int currentHeight = sdk.getConnect().getBlockHeight();
-            if (currentHeight < height){
-                waiteMoment(currentHeight);
-                return false;
-            }
-        }catch (ConnectorException e){
-            changeUrl();
-        }
-        return true;
+
+    public Config getConfig(){
+        return config;
+    }
+    public String getMainChainUrl() {
+        return mainChainUrl;
+    }
+    public void updateMainChainUrl(String nodeUrl){
+        this.mainChainUrl = nodeUrl;
+    }
+    public Account getAdmin() {
+        return admin;
+    }
+    public OntSdk getSdk() {
+        return sdk;
+    }
+    public ShadowChain getShadowChain() {
+        return shadowChain;
     }
 }

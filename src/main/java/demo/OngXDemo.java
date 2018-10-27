@@ -4,10 +4,11 @@ import com.github.ontio.OntSdk;
 import com.github.ontio.account.Account;
 import com.github.ontio.common.Address;
 import com.github.ontio.common.Helper;
-import com.github.ontio.common.ongx.Swap;
+import com.github.ontio.shadowchain.smartcontract.ongx.Swap;
 import com.github.ontio.crypto.SignatureScheme;
+import com.github.ontio.network.rpc.RpcClient;
 import com.github.ontio.sdk.wallet.Identity;
-import com.github.ontio.smartcontract.ongx.OngX;
+import com.github.ontio.shadowchain.smartcontract.ongx.OngX;
 
 import java.util.Base64;
 
@@ -18,14 +19,22 @@ public class OngXDemo {
         String sideChainUrl = "http://139.219.128.220:30336";
         OntSdk sdk = OntSdk.getInstance();
         sdk.openWalletFile("wallet.dat");
+        sdk.setRpc(sideChainUrl);
 //        sdk.setRpc("http://139.219.128.220:20336");
-        sdk.setRpc("http://127.0.0.1:20336");
+//        sdk.setRpc("http://127.0.0.1:20336");
 //        sdk.setRpc(sideChainUrl);
-        OngX ongX = new OngX(sdk);
+        RpcClient rpcClient = new RpcClient(sideChainUrl);
+        OngX ongX = new OngX(sdk, rpcClient);
         String password = "111111";
         Account account = sdk.getWalletMgr().getAccount("AHX1wzvdw9Yipk7E9MuLY4GGX4Ym9tHeDe",password);
         Identity identity = sdk.getWalletMgr().getWallet().getIdentity("did:ont:Abrc5byDEZm1CnQb3XjAosEt34DD4w5Z1o");
         String sideChainContractAddr = "0000000000000000000000000000000000000008";
+        ongX.setRpcUrl(sideChainUrl);
+        if(false){
+
+            System.out.println(ongX.queryBalanceOf(account.getAddressU160().toBase58()));
+            return;
+        }
 
 
         //梦航
@@ -48,7 +57,7 @@ public class OngXDemo {
             pks[i] = accounts[i].serializePublicKey();
         }
 
-        if(true){
+        if(false){
             ongX.setRpcUrl(sideChainUrl);
             String txhash = ongX.ongxSetSyncAddr(accounts1,pks,5,account.getAddressU160().toBase58(),account,20000,0);
 //            String txhash = ongX.ongxSetSyncAddr(account,account.getAddressU160().toBase58(),account,20000,0);
@@ -57,10 +66,11 @@ public class OngXDemo {
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
             return;
         }
-        if(true){
+        if(false){
             System.out.println(ongX.queryBalanceOf(account.getAddressU160().toBase58()));
         }
-        if(false){
+        if(true){
+            ongX.setRpcUrl(sideChainUrl);
             Swap swap = new Swap(account.getAddressU160(),1000);
             String txhash = ongX.ongxSwap(account, swap,account,20000,0);
             System.out.println("txhash: " + txhash);
@@ -68,13 +78,13 @@ public class OngXDemo {
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
         }
         if(false){
-            Swap swap = new Swap(account.getAddressU160(),1000);
-            Swap[] swaps = new Swap[]{swap};
-            String txhash = ongX.ongxInflation(account,swaps,account,20000,0);
+            Swap swap = new Swap(account.getAddressU160(),(long)1000*1000000000);
+            String txhash = ongX.ongSwap(account,swap,account,20000,0);
             System.out.println("txhash: " + txhash);
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
         }
+
     }
 
     public static Account getAccount(String enpri,String password,String address,String salt) throws Exception {

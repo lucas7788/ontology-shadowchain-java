@@ -1,15 +1,18 @@
-package com.github.ontio.smartcontract.governance;
+package com.github.ontio.shadowchain.smartcontract.governance;
 
-import com.alibaba.fastjson.JSONObject;
 import com.github.ontio.OntSdk;
 import com.github.ontio.account.Account;
 import com.github.ontio.common.*;
 import com.github.ontio.core.governance.*;
+import com.github.ontio.core.sidechaingovernance.NodeToSideChainParams;
 import com.github.ontio.core.transaction.Transaction;
 import com.github.ontio.io.BinaryReader;
 import com.github.ontio.io.utils;
 import com.github.ontio.network.exception.ConnectorException;
+import com.github.ontio.network.rpc.RpcClient;
 import com.github.ontio.sdk.exception.SDKException;
+import com.github.ontio.shadowexception.ShadowErrorCode;
+import com.github.ontio.shadowexception.ShadowException;
 import com.github.ontio.smartcontract.nativevm.abi.NativeBuildParams;
 import com.github.ontio.smartcontract.nativevm.abi.Struct;
 
@@ -25,17 +28,31 @@ public class Governance {
     private String SIDE_CHAIN_NODE_INFO = "sideChainNodeInfo";
     private String GLOBAL_PARAM  = "globalParam";
     private String SPLIT_CURVE       = "splitCurve";
+    private String SIDE_CHAIN_ID = "sideChainID";
+    private RpcClient rpcClient;
     private final String contractAddress = "0000000000000000000000000000000000000007";
 
-    public Governance(OntSdk sdk){
+    public Governance(OntSdk sdk, RpcClient rpcClient){
         this.sdk = sdk;
+        this.rpcClient = rpcClient;
     }
     public void setRpcUrl(String rpcUrl){
-        this.sdk.setRpc(rpcUrl);
+        this.rpcClient = new RpcClient(rpcUrl);
     }
 
-    public GovernanceView getGovernanceView() throws SDKException, ConnectorException, IOException {
-        String view = sdk.getConnect().getStorage(Helper.reverse(contractAddress),Helper.toHexString("governanceView".getBytes()));
+    public String getSideChainId() throws ConnectorException, IOException, ShadowException {
+        if(rpcClient == null){
+            throw new ShadowException(ShadowErrorCode.OtherError("rpcClient is null"));
+        }
+        String res = rpcClient.getStorage(Helper.reverse(contractAddress), Helper.toHexString(SIDE_CHAIN_ID.getBytes()));
+        return new String(Helper.hexToBytes(res));
+    }
+
+    public GovernanceView getGovernanceView() throws SDKException, ConnectorException, IOException, ShadowException {
+        if(rpcClient == null){
+            throw new ShadowException(ShadowErrorCode.OtherError("rpcClient is null"));
+        }
+        String view = rpcClient.getStorage(Helper.reverse(contractAddress),Helper.toHexString("governanceView".getBytes()));
         if(view == null || view.equals("")){
             throw new SDKException(ErrorCode.OtherError("view is null"));
         }
@@ -48,9 +65,12 @@ public class Governance {
         return governanceView;
     }
 
-    public Map getPeerPoolMap() throws ConnectorException, IOException, SDKException {
+    public Map getPeerPoolMap() throws ConnectorException, IOException, ShadowException {
+        if(rpcClient == null){
+            throw new ShadowException(ShadowErrorCode.OtherError("rpcClient is null"));
+        }
         byte[] peerPoolBytes = "peerPool".getBytes();
-        String value = this.sdk.getConnect().getStorage(Helper.reverse(contractAddress), Helper.toHexString(peerPoolBytes));
+        String value = rpcClient.getStorage(Helper.reverse(contractAddress), Helper.toHexString(peerPoolBytes));
         ByteArrayInputStream bais2 = new ByteArrayInputStream(Helper.hexToBytes(value));
         BinaryReader reader = new BinaryReader(bais2);
         int length = (int)utils.readVarInt(reader);
@@ -68,15 +88,38 @@ public class Governance {
         return peerPoolMap2;
     }
     public SplitCurve getSplitCurve() throws ConnectorException, IOException, ShadowException, SDKException {
-        return sdk.nativevm().governance().getSplitCurve();
+        if(rpcClient == null){
+            throw new ShadowException(ShadowErrorCode.OtherError("rpcClient is null"));
+        }
+        String res = rpcClient.getStorage(Helper.reverse(contractAddress), Helper.toHexString("splitCurve".getBytes()));
+        SplitCurve curve = new SplitCurve();
+        ByteArrayInputStream in = new ByteArrayInputStream(Helper.hexToBytes(res));
+        BinaryReader reader = new BinaryReader(in);
+        curve.deserialize(reader);
+        return curve;
     }
 
-    public Configuration getConfiguration() throws SDKException, ConnectorException, IOException {
-        return sdk.nativevm().governance().getConfiguration();
+    public Configuration getConfiguration() throws ConnectorException, IOException, ShadowException {
+        if(rpcClient == null){
+            throw new ShadowException(ShadowErrorCode.OtherError("rpcClient is null"));
+        }
+        String res = rpcClient.getStorage(Helper.reverse(contractAddress), Helper.toHexString("vbftConfig".getBytes()));
+        if (res == null) {
+            return null;
+        } else {
+            Configuration configuration = new Configuration();
+            ByteArrayInputStream in = new ByteArrayInputStream(Helper.hexToBytes(res));
+            BinaryReader reader = new BinaryReader(in);
+            configuration.deserialize(reader);
+            return configuration;
+        }
     }
 
-    public GlobalParam getGlobalParam() throws ConnectorException, IOException {
-        String res = sdk.getConnect().getStorage(Helper.reverse(contractAddress), Helper.toHexString(GLOBAL_PARAM.getBytes()));
+    public GlobalParam getGlobalParam() throws ConnectorException, IOException, ShadowException {
+        if(rpcClient == null){
+            throw new ShadowException(ShadowErrorCode.OtherError("rpcClient is null"));
+        }
+        String res = rpcClient.getStorage(Helper.reverse(contractAddress), Helper.toHexString(GLOBAL_PARAM.getBytes()));
         ByteArrayInputStream in = new ByteArrayInputStream(Helper.hexToBytes(res));
         BinaryReader reader = new BinaryReader(in);
         GlobalParam param = new GlobalParam();
@@ -115,11 +158,8 @@ public class Governance {
         if(!account.equals(payer)){
             sdk.addSign(tx,payer);
         }
-        boolean b = sdk.getConnect().sendRawTransaction(tx.toHexString());
-        if (b) {
-            return tx.hash().toString();
-        }
-        return null;
+        rpcClient.sendRawTransaction(tx.toHexString());
+        return tx.hash().toString();
     }
 
 
@@ -138,11 +178,8 @@ public class Governance {
         if(!account.equals(payer)){
             sdk.addSign(tx,payer);
         }
-        boolean b = sdk.getConnect().sendRawTransaction(tx.toHexString());
-        if (b) {
-            return tx.hash().toString();
-        }
-        return null;
+        rpcClient.sendRawTransaction(tx.toHexString());
+        return tx.hash().toString();
     }
 
     public String inputGlobalParam(Account account, GlobalParam param, Account payer, long gaslimit, long gasprice) throws Exception {
@@ -159,11 +196,8 @@ public class Governance {
         if(!account.equals(payer)){
             sdk.addSign(tx,payer);
         }
-        boolean b = sdk.getConnect().sendRawTransaction(tx.toHexString());
-        if (b) {
-            return tx.hash().toString();
-        }
-        return null;
+        rpcClient.sendRawTransaction(tx.toHexString());
+        return tx.hash().toString();
     }
 
     public String inputSplitCurve(Account account, SplitCurve splitCurve, Account payer, long gaslimit, long gasprice) throws Exception {
@@ -183,11 +217,8 @@ public class Governance {
         if(!account.equals(payer)){
             sdk.addSign(tx,payer);
         }
-        boolean b = sdk.getConnect().sendRawTransaction(tx.toHexString());
-        if (b) {
-            return tx.hash().toString();
-        }
-        return null;
+        rpcClient.sendRawTransaction(tx.toHexString());
+        return tx.hash().toString();
     }
     public String inputGovernanceView(Account account, GovernanceView view, Account payer, long gaslimit, long gasprice) throws Exception {
         if(account == null || view == null || payer == null || gaslimit < 0|| gasprice < 0){
@@ -203,11 +234,8 @@ public class Governance {
         if(!account.equals(payer)){
             sdk.addSign(tx,payer);
         }
-        boolean b = sdk.getConnect().sendRawTransaction(tx.toHexString());
-        if (b) {
-            return tx.hash().toString();
-        }
-        return null;
+        rpcClient.sendRawTransaction(tx.toHexString());
+        return tx.hash().toString();
     }
 }
 

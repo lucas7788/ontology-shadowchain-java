@@ -1,4 +1,4 @@
-package com.github.ontio.common;
+package com.github.ontio.shadowexception;
 
 public class ShadowException extends Exception{
     private static final long serialVersionUID = -3056715808373341597L;

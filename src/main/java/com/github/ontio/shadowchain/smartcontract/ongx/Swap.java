@@ -1,4 +1,4 @@
-package com.github.ontio.common.ongx;
+package com.github.ontio.shadowchain.smartcontract.ongx;
 
 
 import com.github.ontio.common.Address;

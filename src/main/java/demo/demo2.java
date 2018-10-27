@@ -1,14 +1,19 @@
 package demo;
 
 import com.github.ontio.OntSdk;
-import com.github.ontio.ShadowChainServer;
+import com.github.ontio.server.ShadowChainServer;
+import com.github.ontio.server.base.Common;
 
 public class demo2 {
     public static Object lock = new Object();
     public static void main(String[] args) throws Exception {
         OntSdk sdk = getOntSdk();
-        ShadowChainServer server = new ShadowChainServer(sdk, lock);
-        server.startServer();
+        sdk.setRpc("http://139.219.128.220:20336");
+        int h = 0;
+        while (true){
+            Common.monitor(sdk.getRpc(),h,"0000000000000000000000000000000000000007","ongSwag");
+            h++;
+        }
     }
 
     public static OntSdk getOntSdk() throws Exception {

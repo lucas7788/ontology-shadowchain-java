@@ -1,17 +1,19 @@
 {
   "mainChainUrl":[
-    "http://127.0.0.1:20336"
+    "http://139.219.128.220:20336"
   ],
   "shadowChainUrl":[
-    "http://127.0.0.1:20336"
+    "http://139.219.128.220:30336"
   ],
   "wallet":"wallet.dat",
-  "admin":[
-    {
-      "address": "",
-      "password": ""
-    }
-  ],
+  "mainChainHeight": 0,
+  "sideChainHeight": 0,
+  "gasLimit":20000,
+  "gasPrice":500,
+  "admin":{
+    "address": "AHX1wzvdw9Yipk7E9MuLY4GGX4Ym9tHeDe",
+    "password": "111111"
+  },
   "superAdmin":[
     {
       "address": "",

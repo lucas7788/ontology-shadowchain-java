@@ -4,12 +4,12 @@ import com.alibaba.fastjson.JSON;
 import com.github.ontio.OntSdk;
 import com.github.ontio.account.Account;
 import com.github.ontio.common.Address;
-import com.github.ontio.common.Config;
 import com.github.ontio.common.Helper;
 import com.github.ontio.core.governance.*;
 import com.github.ontio.crypto.SignatureScheme;
+import com.github.ontio.network.rpc.RpcClient;
 import com.github.ontio.sdk.wallet.Identity;
-import com.github.ontio.smartcontract.governance.Governance;
+import com.github.ontio.shadowchain.smartcontract.governance.Governance;
 
 import java.util.Base64;
 import java.util.Map;
@@ -22,8 +22,8 @@ public class GovernanceDemo {
         sdk.openWalletFile("wallet.dat");
         sdk.setRpc(mainChainUrl);
 //        sdk.setRpc(sideChainUrl);
-
-        Governance governance = new Governance(sdk);
+        RpcClient rpcClient = new RpcClient(sideChainUrl);
+        Governance governance = new Governance(sdk, rpcClient);
         String password = "111111";
         Account account = sdk.getWalletMgr().getAccount("AHX1wzvdw9Yipk7E9MuLY4GGX4Ym9tHeDe",password);
         Identity identity = sdk.getWalletMgr().getWallet().getIdentity("did:ont:Abrc5byDEZm1CnQb3XjAosEt34DD4w5Z1o");
@@ -47,6 +47,10 @@ public class GovernanceDemo {
         byte[][] pks = new byte[accounts.length][];
         for(int i=0;i<pks.length;i++){
             pks[i] = accounts[i].serializePublicKey();
+        }
+        if(true){
+            System.out.println(governance.getSideChainId());
+            return;
         }
         if(false){
             sdk.setRpc(sideChainUrl);

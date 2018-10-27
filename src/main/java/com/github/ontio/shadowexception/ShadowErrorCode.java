@@ -1,4 +1,4 @@
-package com.github.ontio.common;
+package com.github.ontio.shadowexception;
 
 import com.alibaba.fastjson.JSON;
 
