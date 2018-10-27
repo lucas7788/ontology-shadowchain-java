@@ -68,7 +68,7 @@ public class Common {
                 }
             }
             //                        保存日志
-//            Common.saveNotify("mainChainNotify.csv",info.States);
+            Common.saveNotify2("mainChainNotify.csv",(String) event, height);
             return eventList;
         }
         return null;
@@ -128,6 +128,56 @@ public class Common {
             System.out.println(e.getMessage());
         }
 
+    }
+    public static void saveNotify2(String fileName, String notify, int height){
+        FileOutputStream out = null;
+        OutputStreamWriter osw = null;
+        BufferedWriter bw = null;
+        try {
+            File finalCSVFile = new File(fileName);
+            out = new FileOutputStream(finalCSVFile);
+            osw = new OutputStreamWriter(out, "UTF-8");
+            // 手动加上BOM标识
+            osw.write(new String(new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF }));
+            bw = new BufferedWriter(osw);
+            /**
+             * 往CSV中写新数据
+             */
+            String title = "";
+            title = "functionName,sideChianId,address,amount";
+            bw.append(title).append("\r");
+            bw.append(Integer.toString(height));
+            bw.append(notify);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+
+            if (bw != null) {
+                try {
+                    bw.close();
+                    bw = null;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (osw != null) {
+                try {
+                    osw.close();
+                    osw = null;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (out != null) {
+                try {
+                    out.close();
+                    out = null;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
     }
 
     public static void saveNotify(String fileName, List<Object> list){
