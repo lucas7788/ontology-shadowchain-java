@@ -1,9 +1,9 @@
 package demo.test;
 
-public class ThreadB extends Thread{
+public class ThreadC extends Thread {
     private Object lock;
 
-    public ThreadB(Object lock) {
+    public ThreadC(Object lock) {
         super();
         this.lock = lock;
     }
@@ -13,7 +13,7 @@ public class ThreadB extends Thread{
         try {
             for (int i = 0; i < 10; i++) {
                 synchronized (lock){
-                    MyList.add("testB" + i);
+                    MyList.add("testC" + i);
                     lock.notify();
                 }
                 Thread.sleep(1000);

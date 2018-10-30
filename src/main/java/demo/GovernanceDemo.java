@@ -48,7 +48,7 @@ public class GovernanceDemo {
         for(int i=0;i<pks.length;i++){
             pks[i] = accounts[i].serializePublicKey();
         }
-        if(true){
+        if(false){
             System.out.println(governance.getSideChainId());
             return;
         }

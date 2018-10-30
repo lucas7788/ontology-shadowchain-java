@@ -31,7 +31,6 @@ public class OngXDemo {
         String sideChainContractAddr = "0000000000000000000000000000000000000008";
         ongX.setRpcUrl(sideChainUrl);
         if(false){
-
             System.out.println(ongX.queryBalanceOf(account.getAddressU160().toBase58()));
             return;
         }
@@ -70,12 +69,20 @@ public class OngXDemo {
             System.out.println(ongX.queryBalanceOf(account.getAddressU160().toBase58()));
         }
         if(true){
+//            sdk.setRpc(mainChainUrl);
+//            System.out.println(sdk.getConnect().getBlockHeight());
+            sdk.setRpc(sideChainUrl);
+            System.out.println(sdk.getConnect().getBlockHeight());
+//            return;
+        }
+        if(true){
             ongX.setRpcUrl(sideChainUrl);
             Swap swap = new Swap(account.getAddressU160(),1000);
             String txhash = ongX.ongxSwap(account, swap,account,20000,0);
             System.out.println("txhash: " + txhash);
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
+            return;
         }
         if(false){
             Swap swap = new Swap(account.getAddressU160(),(long)1000*1000000000);

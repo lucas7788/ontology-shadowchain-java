@@ -6,24 +6,25 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class MsgQueue {
-    private static Set<String> dataSet = new HashSet<>();
-    public static void addData(MsgInfo info){
+    private Set<String> dataSet = new HashSet<>();
+    public MsgQueue(){
+
+    }
+    public void addData(MsgInfo info){
         dataSet.add(JSON.toJSONString(info));
     }
 
-    public static Set<String> getDataSet() {
-        Set<String> temp = new HashSet<String>();
-        temp.addAll(dataSet);
-        return temp;
+    public Set<String> getDataSet() {
+        return dataSet;
     }
 
-    public static void removeData(String data){
+    public  void removeData(String data){
         dataSet.remove(data);
     }
-    public static  void clear(){
+    public  void clear(){
         dataSet.clear();
     }
-    public static int size() {
+    public  int size() {
         return dataSet.size();
     }
 }

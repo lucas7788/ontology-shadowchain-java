@@ -5,7 +5,7 @@ import com.github.ontio.shadowexception.ShadowException;
 
 public class ServerDemo {
 
-    public static void main(String[] args) throws ShadowException {
+    public static void main(String[] args) throws ShadowException, InterruptedException {
         ShadowChainServer server = new ShadowChainServer();
         server.readConfig("config.json");
         server.startServer();

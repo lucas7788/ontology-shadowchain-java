@@ -14,11 +14,15 @@ import com.github.ontio.shadowexception.ShadowErrorCode;
 import com.github.ontio.shadowexception.ShadowException;
 
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
 public class Common {
+    public static String CHAIN_NOTIFY = "-chainNotify.csv";
+    public static String HANDLE_SENDTRANSACTION = "-handleSendTransaction.csv";
 
     public static boolean verifyHeight(ConnectMgr rpcClient, int height) throws IOException, InterruptedException, ConnectorException {
         int currentHeight = rpcClient.getBlockHeight();
@@ -51,9 +55,8 @@ public class Common {
 
     }
 
-    public static List<SmartCodeEvent> monitor(ConnectMgr rpcClient, int height, String contractAddress,String functionName) throws ConnectorException, IOException, InterruptedException {
+    public static List<SmartCodeEvent> monitor(ConnectMgr rpcClient, int height, MonitorParam[] params) throws ConnectorException, IOException, InterruptedException {
         Object event = rpcClient.getSmartCodeEvent(height);
-        System.out.println("Notify:" + event);
         if(event != null){
             List<SmartCodeEvent> eventList = new ArrayList<>();
             for (Object obj: (JSONArray)event){
@@ -62,13 +65,18 @@ public class Common {
                     continue;
                 }
                 for(NotifyEventInfo info : smartCodeEvent.getNotify()){
-                    if(info.ContractAddress.equals(contractAddress) && info.getStates().get(0).equals(functionName)){
-                        eventList.add(smartCodeEvent);
+                    for(MonitorParam param:params){
+                        if(info.ContractAddress.equals(param.contractAddress) && info.getStates().get(0).equals(param.functionName)){
+                            eventList.add(smartCodeEvent);
+                        }
                     }
                 }
             }
-            //                        保存日志
-            Common.saveNotify2("mainChainNotify.csv",(String) event, height);
+            if(eventList.size() !=0){
+                System.out.println("Notify:" + ((JSONArray)event).toJSONString());
+                //                        保存日志
+                Common.saveNotify2(CHAIN_NOTIFY,((JSONArray)event).toJSONString(), height);
+            }
             return eventList;
         }
         return null;
@@ -103,6 +111,13 @@ public class Common {
         }
         throw new SDKException(ErrorCode.OtherError("time out"));
     }
+    public static boolean verifyResult(Object event){
+        if((int)((Map)event).get("State") == 1){
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     public void saveData(int height) {
         File file = new File("result.txt");
@@ -129,25 +144,99 @@ public class Common {
         }
 
     }
-    public static void saveNotify2(String fileName, String notify, int height){
+    public static void saveHandleSendTransaction(String fileName, String msgInfo, int height){
+        Calendar cal = Calendar.getInstance();
+        java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String currentDate = sdf.format(cal.getTime());
+        fileName = currentDate + fileName;
         FileOutputStream out = null;
         OutputStreamWriter osw = null;
         BufferedWriter bw = null;
         try {
             File finalCSVFile = new File(fileName);
-            out = new FileOutputStream(finalCSVFile);
-            osw = new OutputStreamWriter(out, "UTF-8");
-            // 手动加上BOM标识
-            osw.write(new String(new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF }));
-            bw = new BufferedWriter(osw);
-            /**
-             * 往CSV中写新数据
-             */
-            String title = "";
-            title = "functionName,sideChianId,address,amount";
-            bw.append(title).append("\r");
+            if(!finalCSVFile.exists()){
+                out = new FileOutputStream(finalCSVFile, true);
+                osw = new OutputStreamWriter(out, "UTF-8");
+                // 手动加上BOM标识
+                osw.write(new String(new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF }));
+                bw = new BufferedWriter(osw);
+                /**
+                 * 往CSV中写新数据
+                 */
+                String title = "";
+                title = "height,msgInfo";
+                bw.append(title).append("\r");
+            }else {
+                out = new FileOutputStream(finalCSVFile, true);
+                osw = new OutputStreamWriter(out, "UTF-8");
+                bw = new BufferedWriter(osw);
+            }
             bw.append(Integer.toString(height));
+            bw.append(",");
+            bw.append(msgInfo);
+            bw.append("\r");
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+
+            if (bw != null) {
+                try {
+                    bw.close();
+                    bw = null;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (osw != null) {
+                try {
+                    osw.close();
+                    osw = null;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (out != null) {
+                try {
+                    out.close();
+                    out = null;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+    }
+    public static void saveNotify2(String fileName, String notify, int height){
+        Calendar cal = Calendar.getInstance();
+        java.text.SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String currentDate = sdf.format(cal.getTime());
+        fileName = currentDate + fileName;
+        FileOutputStream out = null;
+        OutputStreamWriter osw = null;
+        BufferedWriter bw = null;
+        try {
+            File finalCSVFile = new File(fileName);
+            if(!finalCSVFile.exists()){
+                out = new FileOutputStream(finalCSVFile, true);
+                osw = new OutputStreamWriter(out, "UTF-8");
+                // 手动加上BOM标识
+                osw.write(new String(new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF }));
+                bw = new BufferedWriter(osw);
+                /**
+                 * 往CSV中写新数据
+                 */
+                String title = "";
+                title = "height,notify";
+                bw.append(title).append("\r");
+            }else {
+                out = new FileOutputStream(finalCSVFile, true);
+                osw = new OutputStreamWriter(out, "UTF-8");
+                bw = new BufferedWriter(osw);
+            }
+            bw.append(Integer.toString(height));
+            bw.append(",");
             bw.append(notify);
+            bw.append("\r");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

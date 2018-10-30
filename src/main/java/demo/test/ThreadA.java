@@ -11,18 +11,17 @@ public class ThreadA extends Thread {
     @Override
     public void run() {
         try {
-            synchronized (lock) {
-                if (MyList.size() != 5) {
-                    System.out.println("wait begin "
-                            + System.currentTimeMillis());
+            while (true){
+                synchronized (lock) {
                     lock.wait();
-                    Thread.sleep(9000);
-                    System.out.println("wait end  "
-                            + System.currentTimeMillis());
-                }else {
-                    System.out.println("=====5");
+                    for(int i=0;i<MyList.size();i++){
+                        System.out.println(MyList.get(i));
+                        MyList.remove(i);
+                    }
+                    Thread.sleep(1000);
                 }
             }
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

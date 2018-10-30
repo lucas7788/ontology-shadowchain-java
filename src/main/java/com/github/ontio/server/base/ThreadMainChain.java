@@ -10,15 +10,15 @@ import com.github.ontio.shadowexception.ShadowException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 
 public class ThreadMainChain implements Runnable {
-    private Object lock;
+    private final BlockingQueue<MsgQueue> queueMainChain;
     private ShadowChainServer shadowChainServer;
-    private static String contractAddress = "0000000000000000000000000000000000000007";
 
-    public ThreadMainChain(ShadowChainServer shadowChainServer, Object obj){
+    public ThreadMainChain(ShadowChainServer shadowChainServer, final BlockingQueue<MsgQueue> queue){
         super();
-        this.lock = obj;
+        this.queueMainChain = queue;
         this.shadowChainServer = shadowChainServer;
     }
 
@@ -50,12 +50,13 @@ public class ThreadMainChain implements Runnable {
             }
 
             try {
-                List<SmartCodeEvent> event = Common.monitor(shadowChainServer.getSdk().getRpc(), h,contractAddress,"ongSwap");
-                if(event == null || event.size()==0) {
-                    continue;
-                }
+                MonitorParam param1 = new MonitorParam("0700000000000000000000000000000000000000","ongSwap");
+                MonitorParam param2 = new MonitorParam("0700000000000000000000000000000000000000","commitDpos");
+                List<SmartCodeEvent> event = Common.monitor(shadowChainServer.getSdk().getRpc(), h,new MonitorParam[]{param1, param2});
                 try {
-                    handleMainChainEvent(shadowChainServer,event);
+                    if(event!=null && event.size()!=0){
+                        handleMainChainEvent(shadowChainServer,event, h);
+                    }
                     h++;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -73,23 +74,26 @@ public class ThreadMainChain implements Runnable {
     }
 
 
-    public void handleMainChainEvent(ShadowChainServer server,List<SmartCodeEvent> eventList) throws Exception {
-        synchronized (lock){
-            for(SmartCodeEvent event: eventList){
-                for(NotifyEventInfo info : event.Notify){
+    public void handleMainChainEvent(ShadowChainServer server,List<SmartCodeEvent> eventList, int h) throws Exception {
+        MsgQueue msgQueue = new MsgQueue();
+        for(SmartCodeEvent event: eventList){
+            for(NotifyEventInfo info : event.Notify){
 //            监听到ongswap事件
-                    if(info.States.get(0).equals("ongSwap")){
-                        String sideChainId = (String) info.States.get(1);
-                        String address = (String) info.States.get(2);
-                        int amount = (int) info.States.get(3);
-                        MsgInfo info1 = new MsgInfo("sideChain",server.getShadowChain().getSideChainUrl(),"ongSwap",
-                                sideChainId,address,amount);
-                        MsgQueue.addData(info1);
-                    }
+                if(info.States.get(0).equals("ongSwap")){
+                    String sideChainId = (String) info.States.get(1);
+                    String address = (String) info.States.get(2);
+                    int amount = (int) info.States.get(3);
+                    MsgInfo info1 = new MsgInfo("mainChain",server.getShadowChain().getSideChainUrl(),"ongSwap",
+                            sideChainId,address,amount,h);
+                    msgQueue.addData(info1);
+                }else if(info.States.get(0).equals("commitDpos")){
+                    MsgInfo info1 = new MsgInfo("mainChain",server.getShadowChain().getSideChainUrl(),"commitDpos",
+                            "","",0,h);
+                    msgQueue.addData(info1);
                 }
             }
-            lock.notify();
         }
+        queueMainChain.add(msgQueue);
 
 
 //                      更新子链
