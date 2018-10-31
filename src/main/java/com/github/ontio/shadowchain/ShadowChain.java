@@ -12,7 +12,6 @@ public class ShadowChain {
     private OngX ongX;
     private String sideChainUrl;
 
-
     public ShadowChain(OntSdk sdk, String sideChainUrl){
         this.sideChainUrl = sideChainUrl;
         sideChainRpcClient = new RpcClient(sideChainUrl);

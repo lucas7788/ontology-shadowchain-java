@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class Demo3 {
     public static void main(String[] args) throws InterruptedException, ConnectorException, IOException, ShadowException {
-        ShadowChainServer server = new ShadowChainServer();
+        ShadowChainServer server = ShadowChainServer.getInstance();
         server.startServer();
     }
 }

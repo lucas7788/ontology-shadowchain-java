@@ -48,8 +48,11 @@ public class GovernanceDemo {
         for(int i=0;i<pks.length;i++){
             pks[i] = accounts[i].serializePublicKey();
         }
-        if(false){
-            System.out.println(governance.getSideChainId());
+        if(true){
+            String sideChainData = sdk.getConnect().getSideChainData("123456");
+            String txhash = governance.commitDpos(account,sideChainData,account,20000,0);
+            Thread.sleep(3000);
+            System.out.println(rpcClient.getSmartCodeEvent(txhash));
             return;
         }
         if(false){
@@ -109,7 +112,7 @@ public class GovernanceDemo {
             return;
         }
 
-        if(true){
+        if(false){
             sdk.setRpc(mainChainUrl);
             InputPeerPoolMapParam peerPoolMap = sdk.nativevm().governance().getInputPeerPoolMapParam("123456");
             System.out.println(JSON.toJSONString(peerPoolMap.peerPoolMap));

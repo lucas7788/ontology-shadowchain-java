@@ -12,7 +12,7 @@ public class ShadowErrorCode {
         map.put("Desc", msg);
         return JSON.toJSONString(map);
     }
-    public static String GetAccountByAddressErr = getError(60001, "WalletManager Error,getAccountByAddress err");
+    public static String PARA_ERROR = getError(60001, "parameter error");
 
     public static String OtherError(String msg) {
         return getError(60000, "Other Error," + msg);

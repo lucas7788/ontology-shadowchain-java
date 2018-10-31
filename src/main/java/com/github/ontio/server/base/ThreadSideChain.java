@@ -13,14 +13,13 @@ import java.util.concurrent.BlockingQueue;
 
 public class ThreadSideChain implements Runnable {
 
-    private BlockingQueue<MsgQueue> queueSideChain;
+//    private BlockingQueue<MsgQueue> queueSideChain;
     private static String contractAddress = "0200000000000000000000000000000000000000";
 
     private ShadowChainServer shadowChainServer;
 
-    public ThreadSideChain(ShadowChainServer shadowChainServer, BlockingQueue<MsgQueue> queueSideChain){
+    public ThreadSideChain(ShadowChainServer shadowChainServer){
         super();
-        this.queueSideChain = queueSideChain;
         this.shadowChainServer = shadowChainServer;
     }
     @Override
@@ -36,13 +35,11 @@ public class ThreadSideChain implements Runnable {
                 }
             } catch (IOException|InterruptedException e) {
                 e.printStackTrace();
-                break;
             } catch (ConnectorException e) {
                 try {
                     Common.changeUrl(shadowChainServer,shadowChainServer.getShadowChain().getSideChainUrl());
                 } catch (ShadowException e1) {
                     e1.printStackTrace();
-                    break;
                 }
             }
             List<SmartCodeEvent> eventList = null;
@@ -51,7 +48,8 @@ public class ThreadSideChain implements Runnable {
                 eventList = Common.monitor(shadowChainServer.getShadowChain().getSideChainRpcClient(),
                         h,new MonitorParam[]{param});
                 if(eventList!=null && eventList.size() !=0){
-                    handleSideChainEvent(shadowChainServer, eventList, h);
+                    MsgQueue msgQueue = handleSideChainEvent(shadowChainServer, eventList, h);
+                    ShadowChainServer.getThreadPool().execute(new ThreadHandle(shadowChainServer,msgQueue));
                 }
             } catch (ConnectorException e) {
                 try {
@@ -67,7 +65,7 @@ public class ThreadSideChain implements Runnable {
         }
     }
 
-    public void handleSideChainEvent(ShadowChainServer shadowChainServer, List<SmartCodeEvent> eventList, int blockHeight) throws ConnectorException, ShadowException, IOException {
+    public MsgQueue handleSideChainEvent(ShadowChainServer shadowChainServer, List<SmartCodeEvent> eventList, int blockHeight) throws ConnectorException, ShadowException, IOException {
         MsgQueue msgQueue = new MsgQueue();
         for(SmartCodeEvent event : eventList){
             for(NotifyEventInfo info : event.Notify){
@@ -95,6 +93,6 @@ public class ThreadSideChain implements Runnable {
                 }
             }
         }
-        queueSideChain.add(msgQueue);
+        return msgQueue;
     }
 }

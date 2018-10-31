@@ -127,6 +127,20 @@ public class Governance {
         return param;
     }
 
+    public String commitDpos(Account account, String sideChainData, Account payer, long gaslimit, long gasprice) throws Exception {
+        if(account == null || payer == null || gaslimit < 0|| gasprice < 0){
+            throw new SDKException(ErrorCode.OtherError("parameter is wrong"));
+        }
+        Transaction tx = sdk.vm().buildNativeParams(new Address(Helper.hexToBytes(contractAddress)),"commitDpos",
+                Helper.hexToBytes(sideChainData),payer.getAddressU160().toBase58(),gaslimit, gasprice);
+        sdk.signTx(tx,new Account[][]{{account}});
+        if(!account.equals(payer)){
+            sdk.addSign(tx,payer);
+        }
+        rpcClient.sendRawTransaction(tx.toHexString());
+        return tx.hash().toString();
+    }
+
     /**
      *
      * @param account

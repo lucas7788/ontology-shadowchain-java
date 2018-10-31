@@ -6,7 +6,7 @@
     "http://139.219.128.220:30336"
   ],
   "wallet":"wallet.dat",
-  "mainChainHeight": 19138,
+  "mainChainHeight": 338,
   "sideChainHeight": 7849,
   "gasLimit":20000,
   "gasPrice":500,

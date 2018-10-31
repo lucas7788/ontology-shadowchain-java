@@ -58,6 +58,7 @@ public class Common {
     public static List<SmartCodeEvent> monitor(ConnectMgr rpcClient, int height, MonitorParam[] params) throws ConnectorException, IOException, InterruptedException {
         Object event = rpcClient.getSmartCodeEvent(height);
         if(event != null){
+            System.out.println("event: " + event);
             List<SmartCodeEvent> eventList = new ArrayList<>();
             for (Object obj: (JSONArray)event){
                 SmartCodeEvent smartCodeEvent = JSONObject.toJavaObject((JSONObject)obj,SmartCodeEvent.class);

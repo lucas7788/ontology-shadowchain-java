@@ -14,38 +14,47 @@ import java.util.concurrent.*;
 public class ShadowChainServer {
     private OntSdk sdk;
     private Config config;
-    private String mainChainUrl;
-    private Account admin;
-    private ShadowChain shadowChain;
+    private static String mainChainUrl;
+    private static Account admin;
+    private static ShadowChain shadowChain;
     private static final ThreadPoolExecutor THREAD_POOL = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     private static final ScheduledExecutorService listerMainChainService = Executors.newSingleThreadScheduledExecutor();
     private static final ScheduledExecutorService listerSideChainService = Executors.newSingleThreadScheduledExecutor();
-    public ShadowChainServer() {
+    private ShadowChainServer() {
         this.sdk = OntSdk.getInstance();
     }
 
-    public void startServer() throws InterruptedException {
+    private static ShadowChainServer instance = null;
 
-        BlockingQueue<MsgQueue> queueMainChain = new ArrayBlockingQueue<MsgQueue>(100);
+    public static synchronized ShadowChainServer getInstance(){
+        if(instance == null){
+            instance = new ShadowChainServer();
+        }
+        return instance;
+    }
+
+    public void startServer() {
+
+//        BlockingQueue<MsgQueue> queueMainChain = new ArrayBlockingQueue<MsgQueue>(100);
 //        监听主链
-        listerMainChainService.execute(new ThreadMainChain(this, queueMainChain));
+        listerMainChainService.execute(new ThreadMainChain(this));
 
-        BlockingQueue<MsgQueue> queueSideChain = new ArrayBlockingQueue<MsgQueue>(100);
+//        BlockingQueue<MsgQueue> queueSideChain = new ArrayBlockingQueue<MsgQueue>(100);
 //        监听子链
-        listerSideChainService.execute(new ThreadSideChain(this,queueSideChain));
+//        listerSideChainService.execute(new ThreadSideChain(this));
 
 //        处理监听到的消息
-        while (true){
-            final MsgQueue msgMainChain = queueMainChain.take();
-            if(msgMainChain !=null && msgMainChain.getDataSet().size() !=0){
-                THREAD_POOL.execute(new ThreadHandle(this, msgMainChain));
-            }
-            final MsgQueue msgSideChain = queueSideChain.take();
-            System.out.println(msgSideChain.size());
-            if(msgSideChain!=null && msgSideChain.size() !=0){
-                THREAD_POOL.execute(new ThreadHandle(this, msgSideChain));
-            }
-        }
+//        while (true){
+//            final MsgQueue msgMainChain = queueMainChain.take();
+//            if(msgMainChain !=null && msgMainChain.getDataSet().size() !=0){
+//                THREAD_POOL.execute(new ThreadHandle(this, msgMainChain));
+//            }
+//            final MsgQueue msgSideChain = queueSideChain.take();
+//            System.out.println(msgSideChain.size());
+//            if(msgSideChain!=null && msgSideChain.size() !=0){
+//                THREAD_POOL.execute(new ThreadHandle(this, msgSideChain));
+//            }
+//        }
     }
 
 
@@ -80,6 +89,11 @@ public class ShadowChainServer {
             e.printStackTrace();
         }
 
+    }
+
+
+    public static ThreadPoolExecutor getThreadPool() {
+        return THREAD_POOL;
     }
 
     public Config getConfig(){

@@ -44,11 +44,11 @@ public class ThreadHandle implements Runnable {
 
     public void sendTransaction(MsgInfo msgInfo) throws Exception {
         if(msgInfo.chainType.equals("sideChain")){
-            if(msgInfo.functionName.equals("ongSwap")){
+            if(msgInfo.functionName.equals("ongxSwap")){
                 SwapParam param= new SwapParam(msgInfo.sideChainId,Address.decodeBase58(msgInfo.address),msgInfo.amount);
-                String txhash = server.getSdk().nativevm().sideChainGovernance().ongSwap(server.getAdmin(),param,server.getAdmin(),
+                String txhash = server.getSdk().nativevm().sideChainGovernance().ongxSwap(server.getAdmin(),param,server.getAdmin(),
                         server.getConfig().gasLimit,server.getConfig().gasPrice);
-                Object res = Common.waitResult(server.getShadowChain().getSideChainRpcClient(), txhash);
+                Object res = Common.waitResult(server.getSdk().getRpc(), txhash);
                 if(!Common.verifyResult(res)){
                     System.out.println("failed transaction, txhash is : " + txhash);
                     throw new ShadowException(ShadowErrorCode.OtherError("ongSwap error"));
@@ -96,19 +96,22 @@ public class ThreadHandle implements Runnable {
                 }
             }
         }else if(msgInfo.chainType.equals("mainChain")){
-            if(msgInfo.functionName.equals("ongxSwap")){
-                String sideChainId2 = server.getShadowChain().getGovernance().getSideChainId();
-                if(!msgInfo.sideChainId.equals(sideChainId2)){
-                    throw new ShadowException(ShadowErrorCode.OtherError("sidechainId error"));
-                }
-                SwapParam param= new SwapParam(msgInfo.sideChainId,Address.decodeBase58(msgInfo.address),msgInfo.amount);
-                String txhash = server.getSdk().nativevm().sideChainGovernance().ongxSwap(server.getAdmin(),param,server.getAdmin(),
+            if(msgInfo.functionName.equals("ongSwap")){
+//                String sideChainId2 = server.getShadowChain().getGovernance().getSideChainId();
+//                if(!msgInfo.sideChainId.equals(sideChainId2)){
+//                    throw new ShadowException(ShadowErrorCode.OtherError("sidechainId error"));
+//                }
+//                SwapParam param= new SwapParam(msgInfo.sideChainId,Address.decodeBase58(msgInfo.address),msgInfo.amount);
+                Swap swap = new Swap(Address.decodeBase58(msgInfo.address),msgInfo.amount);
+                String txhash = server.getShadowChain().getOngX().ongSwap(server.getAdmin(),swap,server.getAdmin(),
                         server.getConfig().gasLimit,server.getConfig().gasPrice);
-                Object res = Common.waitResult(server.getSdk().getRpc(), txhash);
+                Object res = Common.waitResult(server.getShadowChain().getSideChainRpcClient(), txhash);
                 if(!Common.verifyResult(res)){
                     System.out.println("failed transaction, txhash is : " + txhash);
                     throw new ShadowException(ShadowErrorCode.OtherError("inputPeerPoolMap error"));
                 }
+            }else if(msgInfo.functionName.equals("commitDpos")){
+
             }
         }
     }

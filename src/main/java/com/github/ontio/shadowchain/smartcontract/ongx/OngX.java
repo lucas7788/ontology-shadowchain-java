@@ -153,6 +153,10 @@ public class OngX {
     }
 
     public String ongxSetSyncAddr(Account[] accounts,byte[][] allPubkeys,int M,String address, Account payer, long gaslimit, long gasprice) throws Exception {
+        if(accounts == null || accounts.length ==0 || address==null|| address.equals("")|| allPubkeys == null || allPubkeys.length < accounts.length
+                ||payer == null || gaslimit < 0||gasprice < 0){
+            throw new ShadowException(ShadowErrorCode.PARA_ERROR);
+        }
         List list = new ArrayList();
         Struct struct = new Struct();
         struct.add(Address.decodeBase58(address));
@@ -167,6 +171,9 @@ public class OngX {
     }
 
     public String ongxSetSyncAddr(Account account,String address, Account payer, long gaslimit, long gasprice) throws Exception {
+        if(account == null || address==null|| address.equals("") ||payer == null || gaslimit < 0||gasprice < 0){
+            throw new ShadowException(ShadowErrorCode.PARA_ERROR);
+        }
         List list = new ArrayList();
         Struct struct = new Struct();
         struct.add(Address.decodeBase58(address));
@@ -181,7 +188,9 @@ public class OngX {
     }
 
     public String ongSwap(Account account, Swap swap, Account payer, long gaslimit, long gasprice) throws Exception {
-
+        if(account == null || swap == null|| swap.value <0 || payer == null || gaslimit < 0||gasprice < 0){
+            throw new ShadowException(ShadowErrorCode.PARA_ERROR);
+        }
         List list = new ArrayList();
         Struct struct = new Struct();
         struct.add(swap.address, swap.value);
@@ -195,6 +204,9 @@ public class OngX {
 
 
     public String ongxSwap(Account account, Swap swap, Account payer, long gaslimit, long gasprice) throws Exception {
+        if(account == null || swap == null|| swap.value <0 || payer == null || gaslimit < 0||gasprice < 0){
+            throw new ShadowException(ShadowErrorCode.PARA_ERROR);
+        }
         List list = new ArrayList();
         Struct struct = new Struct();
         struct.add(swap.address, swap.value);

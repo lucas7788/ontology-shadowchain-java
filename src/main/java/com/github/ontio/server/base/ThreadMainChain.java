@@ -13,12 +13,10 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
 public class ThreadMainChain implements Runnable {
-    private final BlockingQueue<MsgQueue> queueMainChain;
     private ShadowChainServer shadowChainServer;
 
-    public ThreadMainChain(ShadowChainServer shadowChainServer, final BlockingQueue<MsgQueue> queue){
+    public ThreadMainChain(ShadowChainServer shadowChainServer){
         super();
-        this.queueMainChain = queue;
         this.shadowChainServer = shadowChainServer;
     }
 
@@ -38,24 +36,22 @@ public class ThreadMainChain implements Runnable {
                         Common.changeUrl(shadowChainServer,shadowChainServer.getMainChainUrl());
                     } catch (ShadowException e1) {
                         e1.printStackTrace();
-                        break;
                     }
                 }catch (SDKException e){
                     e.printStackTrace();
-                    break;
                 }
             } catch (IOException|InterruptedException e) {
                 e.printStackTrace();
-                break;
             }
 
             try {
-                MonitorParam param1 = new MonitorParam("0700000000000000000000000000000000000000","ongSwap");
+                MonitorParam param1 = new MonitorParam("0800000000000000000000000000000000000000","ongSwap");
                 MonitorParam param2 = new MonitorParam("0700000000000000000000000000000000000000","commitDpos");
                 List<SmartCodeEvent> event = Common.monitor(shadowChainServer.getSdk().getRpc(), h,new MonitorParam[]{param1, param2});
                 try {
                     if(event!=null && event.size()!=0){
-                        handleMainChainEvent(shadowChainServer,event, h);
+                        MsgQueue msgQueue = handleMainChainEvent(shadowChainServer,event, h);
+                        ShadowChainServer.getThreadPool().execute(new ThreadHandle(shadowChainServer, msgQueue));
                     }
                     h++;
                 } catch (Exception e) {
@@ -74,7 +70,7 @@ public class ThreadMainChain implements Runnable {
     }
 
 
-    public void handleMainChainEvent(ShadowChainServer server,List<SmartCodeEvent> eventList, int h) throws Exception {
+    public MsgQueue handleMainChainEvent(ShadowChainServer server,List<SmartCodeEvent> eventList, int h) throws Exception {
         MsgQueue msgQueue = new MsgQueue();
         for(SmartCodeEvent event: eventList){
             for(NotifyEventInfo info : event.Notify){
@@ -93,7 +89,7 @@ public class ThreadMainChain implements Runnable {
                 }
             }
         }
-        queueMainChain.add(msgQueue);
+        return msgQueue;
 
 
 //                      更新子链

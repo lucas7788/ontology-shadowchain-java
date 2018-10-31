@@ -68,15 +68,18 @@ public class OngXDemo {
         if(false){
             System.out.println(ongX.queryBalanceOf(account.getAddressU160().toBase58()));
         }
-        if(true){
+        if(false){
 //            sdk.setRpc(mainChainUrl);
 //            System.out.println(sdk.getConnect().getBlockHeight());
             sdk.setRpc(sideChainUrl);
             System.out.println(sdk.getConnect().getBlockHeight());
 //            return;
         }
-        if(true){
-            ongX.setRpcUrl(sideChainUrl);
+        if(false){
+            System.out.println(ongX.queryBalanceOf(account.getAddressU160().toBase58()));
+            return;
+        }
+        if(false){
             Swap swap = new Swap(account.getAddressU160(),1000);
             String txhash = ongX.ongxSwap(account, swap,account,20000,0);
             System.out.println("txhash: " + txhash);
@@ -90,6 +93,13 @@ public class OngXDemo {
             System.out.println("txhash: " + txhash);
             Thread.sleep(6000);
             System.out.println(sdk.getConnect().getSmartCodeEvent(txhash));
+        }
+        if(false){
+//            子链启动的时候调用，
+            String txhash = ongX.ongxSetSyncAddr(accounts,pks,5,account.getAddressU160().toBase58(),account1,20000,0);
+            Thread.sleep(6000);
+            System.out.println(rpcClient.getSmartCodeEvent(txhash));
+            return;
         }
 
     }
